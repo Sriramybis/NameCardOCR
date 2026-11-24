@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#161616">
+  <title>CardSnap - Business Card Scanner</title>
+  
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="brand-container">
+      <span class="brand-logo">📇</span>
+      <div>
+        <h1 class="brand-title">CardSnap</h1>
+        <p class="brand-subtitle">OCR Card Scanner & Excel Sync</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="badge-live">Excel Live</div>
+    </div>
+  </header>
+
+  <!-- Main Viewports -->
+  <main class="app-main">
+
+    <!-- ============================================== -->
+    <!-- TAB 1: SCANNER                                 -->
+    <!-- ============================================== -->
+    <section id="tab-scan" class="tab-content active">
+      <div class="scanner-section">
+        
+        <!-- Live Camera Viewport -->
+        <div class="camera-container">
+          <video id="camera-feed" autoplay playsinline muted></video>
+          
+          <!-- Card Alignment Target Guide -->
+          <div class="card-guide-overlay">
+            <div class="card-target-box">
+              <span class="corner-notch corner-top-left"></span>
+              <span class="corner-notch corner-top-right"></span>
+              <span class="corner-notch corner-bottom-left"></span>
+              <span class="corner-notch corner-bottom-right"></span>
+              <div class="scan-laser"></div>
+              <span class="guide-label">Align card within frame</span>
+            </div>
+          </div>
+
+          <!-- In-Camera Controls (Flash, Switch Cam) -->
+          <div class="camera-top-bar">
+            <button id="btn-torch" class="icon-btn-circle" title="Toggle Flash / Torch">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </button>
+            <button id="btn-switch-camera" class="icon-btn-circle" title="Switch Camera">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><path d="M4 8V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><polyline points="16 4 20 8 16 12"/><polyline points="8 20 4 16 8 12"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hidden canvas for OCR frame preprocessing -->
+        <canvas id="hidden-canvas" style="display: none;"></canvas>
+
+        <!-- Dynamic Status Banner -->
+        <div id="scanner-status" class="scanner-status-banner status-ready">
+          <span id="scanner-spinner" class="scanner-spinner" style="display: none;"></span>
+          <span id="scanner-status-text">Point camera at card and tap Scan</span>
+        </div>
+
+        <!-- Scanner Control Actions -->
+        <div class="scanner-controls">
+          <button id="btn-upload" class="action-btn-secondary" title="Pick from Gallery">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Photo / File</span>
+          </button>
+          <input type="file" id="file-input" accept="image/*" style="display: none;">
+
+          <button id="btn-capture" class="shutter-btn" title="Capture & OCR Card">
+            <div class="shutter-inner"></div>
+          </button>
+
+          <button class="action-btn-secondary" onclick="switchTab('cards')" title="View Cards">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>All Cards</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: SCANNED CARDS (EXCEL SYNCED)            -->
+    <!-- ============================================== -->
+    <section id="tab-cards" class="tab-content">
+      <div class="cards-section">
+        
+        <div class="section-top-bar">
+          <div class="section-title-wrap">
+            <h2 class="section-title">Scanned Cards</h2>
+            <span id="cards-count-badge" class="badge-count">0 Cards</span>
+          </div>
+          <div class="top-actions">
+            <button id="btn-refresh-cards" class="icon-btn-flat" title="Reload from Excel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            </button>
+            <button id="btn-download-excel" class="btn-primary-sm" title="Download Excel Sheet">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download Excel</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="filter-search-box">
+          <div class="search-input-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-cards-input" placeholder="Search by name, company, phone, email...">
+          </div>
+          <div class="filter-controls">
+            <label class="checkbox-label">
+              <input type="checkbox" id="filter-needs-edit">
+              <span>Show only "Needs Edits" ⚠️</span>
+            </label>
+            <span class="excel-sync-status">💾 Server Synced</span>
+          </div>
+        </div>
+
+        <!-- Cards List Container -->
+        <div id="cards-container" class="cards-container">
+          <!-- Dynamically populated from Excel -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: CONNECT & INSTRUCTIONS                  -->
+    <!-- ============================================== -->
+    <section id="tab-info" class="tab-content">
+      <div class="info-section">
+        
+        <div class="info-card">
+          <h3>📱 Scan from Mobile Phone</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+            Open this scanner on your mobile phone's browser by connecting to the same WiFi or using ngrok:
+          </p>
+          
+          <div class="qr-block">
+            <img id="qr-code-img" class="qr-image" alt="QR Code for Mobile">
+            <span style="font-size: 12px; color: var(--text-dim);">Scan this QR Code with your phone camera</span>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Direct Local URL:</span>
+            <div id="local-ip-text" class="code-box">http://localhost:3000</div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>🌐 Remote Access via Ngrok</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
+            If scanning over cellular data or outside your local WiFi network, run this command in your laptop terminal:
+          </p>
+          <div id="ngrok-hint-text" class="code-box">ngrok http 3000</div>
+          <p style="font-size: 12px; color: var(--text-dim); margin-top: 6px;">
+            Then open the resulting <code style="background:#eee; padding:2px 4px; border-radius:3px;">https://....ngrok-free.app</code> URL on your mobile phone.
+          </p>
+        </div>
+
+        <div class="info-card">
+          <h3>📊 Local Excel Storage</h3>
+          <ol class="info-step-list">
+            <li><strong>Auto-saved on Laptop:</strong> Scanned cards are instantly appended to <code style="background:#eee; padding:2px 4px; border-radius:3px;">data/business_cards.xlsx</code>.</li>
+            <li><strong>Columns:</strong> ID, Scanned At, Full Name, Company, Phone, Phone 2, Email, Job Title, Website, Address, Raw Text, Needs Edit.</li>
+            <li><strong>One-Click Editable Field:</strong> Toggle the "Needs Edit" switch anytime from the app to flag cards for manual review.</li>
+          </ol>
+          <button id="btn-download-excel-info" class="btn-primary-sm" style="margin-top: 14px; width: 100%; justify-content: center;">
+            📥 Download Local Excel File (.xlsx)
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- NON-INTERRUPTIVE QUICK VIEW TOAST / SIDE DRAWER-->
+  <!-- ============================================== -->
+  <aside id="quick-view-toast" class="quick-view-toast" aria-live="polite">
+    <div class="toast-header">
+      <div>
+        <span class="toast-badge-pill">✨ Auto Saved to Excel</span>
+        <h3 id="toast-name" class="toast-name">Contact Name</h3>
+        <div id="toast-company" class="toast-company">Company Name</div>
+        <span id="toast-title" class="toast-title-badge">Job Title</span>
+      </div>
+      <button id="toast-close-btn" class="toast-close-btn" title="Dismiss">&times;</button>
+    </div>
+
+    <div class="toast-body">
+      <div class="toast-row">
+        <span class="toast-icon">📞</span>
+        <span id="toast-phone" class="toast-val">—</span>
+      </div>
+      <div id="toast-phone2-row" class="toast-row" style="display: none;">
+        <span class="toast-icon">📱</span>
+        <span id="toast-phone2" class="toast-val">—</span>
+      </div>
+      <div class="toast-row">
+        <span class="toast-icon">✉️</span>
+        <span id="toast-email" class="toast-val">—</span>
+      </div>
+      <div id="toast-website-row" class="toast-row" style="display: none;">
+        <span class="toast-icon">🌐</span>
+        <a id="toast-website" href="#" target="_blank" class="toast-val link-action">—</a>
+      </div>
+      <div id="toast-address-row" class="toast-row" style="display: none;">
+        <span class="toast-icon">📍</span>
+        <span id="toast-address" class="toast-val">—</span>
+      </div>
+    </div>
+
+    <div class="toast-footer">
+      <div class="toast-saved-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Saved to Excel</span>
+      </div>
+      <button id="toast-flag-btn" class="toast-flag-btn" title="Toggle Needs Edit">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+        <span>Mark "Needs Edit"</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============================================== -->
+  <!-- FIXED MOBILE BOTTOM NAVIGATION BAR             -->
+  <!-- ============================================== -->
+  <nav class="bottom-nav">
+    <button class="tab-btn active" data-tab="scan">
+      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span>Scan</span>
+    </button>
+    <button class="tab-btn" data-tab="cards">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>All Cards</span>
+      <span id="nav-cards-badge" class="nav-badge" style="display: none;">0</span>
+    </button>
+    <button class="tab-btn" data-tab="info">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>Connect</span>
+    </button>
+  </nav>
+
+  <!-- Scripts -->
+  <script src="js/parser.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
